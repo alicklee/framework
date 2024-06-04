@@ -1,0 +1,8 @@
+{
+  "Name": "demo server",
+  "Host": "0.0.0.0",
+  "TcpPort": 1123,
+  "MacConn": 3,
+  "MongoDBUrl": "mongodb://localhost:27017",
+  "MongoDBName": "demo"
+}

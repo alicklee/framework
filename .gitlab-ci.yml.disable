@@ -1,0 +1,59 @@
+stages:
+  - build-tag
+  - report
+
+variables:
+  IMAGE_NS: "cloudcade"
+  GIT_DEPTH: "2"
+  CI_DEBUG_TRACE: ${CI_DEBUG}
+
+default:
+  retry:
+    max: 2
+    when: stuck_or_timeout_failure
+
+job_build_tag:
+  stage: build-tag
+  image: gitlab/dind
+  before_script:
+    - git config --global user.email $GIT_ACCESS_EMAIL
+    - git config --global user.name $GIT_ACCESS_USER
+  script:
+    - ls -alh
+    - git remote -v
+    - git fetch --tags
+    - git pull origin ${CI_COMMIT_REF_SLUG}
+    - git tag
+    - TAG=$(git describe --tags $( git rev-list --max-count=1 --tags ))
+    - echo $TAG
+    - TAG=$(echo $TAG | cut -d '.' -f 1,2).$(($(echo $TAG | cut -d '.' -f 3)+1))
+    - git tag $TAG
+    - echo $TAG
+    # push
+    - git push --tags http://${GIT_ACCESS_USER}:${PERSONAL_ACCESS_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_SLUG}
+  only:
+    - release
+
+job_report_success:
+  stage: report
+  image: gitlab/dind
+  when: on_success
+  script:
+    - git fetch --tags
+    - git tag
+    - TAG=$(git describe --tags $( git rev-list --max-count=1 --tags ))
+    - echo $TAG
+    - projectLink=\<${CI_PROJECT_URL}/pipelines\|${CI_PROJECT_NAME}\>
+    - curl "${SLACK_GIT_URL}" -XPOST -H "content-type:application/json" -d "{\"text\":\"✅ shl-Framework Tag => \`${TAG}\`\nSuccess ${projectLink} ${CI_COMMIT_REF_SLUG}\n${GITLAB_USER_NAME}\"}"
+  only:
+    - release
+
+job_report_failure:
+  stage: report
+  image: gitlab/dind
+  when: on_failure
+  script:
+    - projectLink=\<${CI_PROJECT_URL}/pipelines\|${CI_PROJECT_NAME}\>
+    - curl "${SLACK_GIT_URL}" -XPOST -H "content-type:application/json" -d "{\"text\":\"🚫 Fail shl-Framework \`${CI_PROJECT_NAME}\`.\nJob:${CI_JOB_URL}\n\`${GITLAB_USER_NAME}\`\"}"
+  only:
+    - release

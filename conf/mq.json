@@ -1,0 +1,2 @@
+
+[{"Channel":{"exchange": {"Name": "gameserver", "Type": "topic", "Durable": false, "AutoDeleted":false, "Internal": false, "NoWait":false, "Arg": ""}, "queue": {"Name": "gq","RoutingKey": "s1","Durable": false,"AutoDel": false,"Exclusive": false,"NoWait": false,"Arg": ""}}}]
